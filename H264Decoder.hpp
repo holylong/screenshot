@@ -34,6 +34,9 @@
 #define _H264_DECODER_H_
 
 #include <H264Mgr.hpp>
+#include <iostream>
+#include <codec_app_def.h>
+#include <codec_api.h>
 
 namespace sshot{
   class H264Decoder : public H264Mgr{
@@ -48,8 +51,21 @@ namespace sshot{
    * @param type 
    * @return int 
    */
-    		int Init(int width, int height,float in_fps, float out_fps, int type){
-          return 0;
+    		int Init(int width, int height,float in_fps = 25.0f, float out_fps = 25.0f, int type = 0){
+          _width = width;
+          _height = height;
+
+          int ret = 0;
+          if((ret = WelsCreateDecoder(&_decoder)) < 0) return ret;
+
+          memset(&_decParam, '\0', sizeof(SDecodingParam));
+          _decParam.uiTargetDqLayer = UCHAR_MAX;
+          _decParam.eEcActiveIdc = ERROR_CON_FRAME_COPY_CROSS_IDR;
+          _decParam.sVideoProperty.size = sizeof(_decParam.sVideoProperty);
+          _decParam.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
+          
+          if((ret = _decoder->Initialize(&_decParam)) < 0) return ret;
+          return ret;
         }
 #if 0
         int Encode(yuv420frame yuv, int nLen)
@@ -57,10 +73,39 @@ namespace sshot{
           return 0;
         }
 #endif
-        int Decode(unsigned char* h264buf, unsigned int h264len)
+        int Decode(unsigned char* h264buf, unsigned int h264len, uint8_t** dstbuf,  int* stride, int& width, int& height)
         {
-          return 0;
+          DECODING_STATE ret = dsErrorFree;
+          // int stride[2] = { _width, _height>>1};
+          //return _decoder->DecodeFrame(h264buf, h264len, dstbuf, stride, width, height);
+            SBufferInfo sDstBufInfo;
+            memset(&sDstBufInfo, 0, sizeof(SBufferInfo));
+            sDstBufInfo.uiInBsTimeStamp = uiTimeStamp++;
+            //ret = _decoder->DecodeFrame2(h264buf, h264len, dstbuf, &sDstBufInfo);
+            ret = _decoder->DecodeFrameNoDelay(h264buf, h264len, dstbuf, &sDstBufInfo);
+            if(sDstBufInfo.iBufferStatus == 1){
+                dstbuf[0] = sDstBufInfo.pDst[0];
+                dstbuf[1] = sDstBufInfo.pDst[1];
+                dstbuf[2] = sDstBufInfo.pDst[2];
+                stride[0] = sDstBufInfo.UsrData.sSystemBuffer.iStride[0];
+                stride[1] = sDstBufInfo.UsrData.sSystemBuffer.iStride[1];
+                width = sDstBufInfo.UsrData.sSystemBuffer.iWidth;
+                height = sDstBufInfo.UsrData.sSystemBuffer.iHeight;
+            }
+            return ret;
         }
+
+        virtual ~H264Decoder(){
+          if (_decoder) {
+            _decoder->Uninitialize();
+            WelsDestroyDecoder (_decoder);
+          }
+        }
+
+      private:
+        ISVCDecoder* _decoder{nullptr};
+        SDecodingParam _decParam;
+        uint64_t uiTimeStamp{ 0 };
   };
 }
 

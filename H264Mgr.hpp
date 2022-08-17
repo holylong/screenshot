@@ -50,8 +50,8 @@ namespace sshot{
        * @param type 
        * @return int 
        */
-      virtual int Init(int width, int height,float in_fps, float out_fps, int type) = 0;
-      virtual int Decode(unsigned char* h264buf, unsigned int h264len) = 0;
+      virtual int Init(int width, int height,float in_fps  = 25.0f, float out_fps  = 25.0f, int type = 0) = 0;
+      virtual int Decode(unsigned char* h264buf, unsigned int h264len, uint8_t** dstbuf,  int* stride, int& width, int& height) = 0;
 #if 0
       virtual int Encode(yuv420frame yuv, int nLen) = 0;
 #endif
@@ -59,10 +59,11 @@ namespace sshot{
       virtual int Encode(uint8_t* yuvdata, uint8_t* h264buf, int *outlen){
         return 0;
       }
-  };
 
-  class H264Decoder;
-  class H264Encoder;
+protected:
+      int _width{1920};
+			int _height{1080};
+  };
 
   H264Mgr* createH264Mgr(MgrType type = Mgr_Encode);
 }

@@ -58,7 +58,7 @@ namespace sshot {
 	 * @param type 
 	 * @return int 
 	 */
-		int Init(int width, int height,float in_fps, float out_fps, int type){
+		int Init(int width, int height,float in_fps  = 25.0f, float out_fps  = 25.0f, int type = 0){
 			_width = width;
 			_height = height;
 			_in_fps = in_fps;
@@ -234,7 +234,7 @@ namespace sshot {
 				return res;
     }
 
-		int Decode(unsigned char* h264buf, unsigned int h264len)
+		int Decode(unsigned char* h264buf, unsigned int h264len, uint8_t** dstbuf,  int* stride, int& width, int& height)
 		{
 			return 0;
 		}
@@ -260,8 +260,6 @@ namespace sshot {
 			SFrameBSInfo   *_info;
 			// SFrameBSInfo   _info;
 
-			int _width{1920};
-			int _height{1080};
 			float _out_fps{30.0f};
 			float _in_fps{30.0f};
 			int _gop{320};

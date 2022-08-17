@@ -52,6 +52,8 @@ using namespace cv;
 
 #define DUMP_FILE_H264
 // #define DUMP_FILE_YUV
+#define DUMP_FILE_DST_YUV
+#define USE_DECODER
 
 #if 1
 
@@ -94,15 +96,28 @@ int main(int argc, char* argv[])
 	int h264Size = 0;
 	uint8_t* h264buf = (uint8_t*)malloc(1024*1024);
 
+	uint8_t* decbuf[3];
+	decbuf[0] = (uint8_t*)malloc(width * height);
+	decbuf[1] = (uint8_t*)malloc((1+width * height)>>2);
+	decbuf[2]= (uint8_t*)malloc((1+width * height)>>2);
+
 		//init h264mgr
 	auto encoder = sshot::createH264Mgr();
 	encoder->Init(width, height, 15, 15, 0);
+
+#ifdef USE_DECODER
+	auto decoder = sshot::createH264Mgr(sshot::Mgr_Decode);
+	decoder->Init(width, height);
+#endif
 
 #ifdef DUMP_FILE_YUV
 	std::ofstream ofsyuv;
 	ofsyuv.open("p.yuv", std::ios::binary);
 #endif
-
+#ifdef DUMP_FILE_DST_YUV
+	std::ofstream ofsdecyuv;
+	ofsdecyuv.open("dec.yuv", std::ios::binary);
+#endif
 #ifdef DUMP_FILE_H264
 	std::ofstream ofsh264;
 	if(argc == 2)
@@ -110,7 +125,7 @@ int main(int argc, char* argv[])
 		else ofsh264.open("output.264", std::ios::binary);
 #endif
 
-	while (count < 150)
+	while (count < 100)
 	{
 		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - pretime);
 		pretime = std::chrono::system_clock::now();
@@ -123,19 +138,19 @@ int main(int argc, char* argv[])
 			fpstr += sshot::SystemUtil::to_string(fps, 2);
 		}
 		shoter->get_output_data(&pRgb, &pSize);
-#ifdef USE_OPENCV
-		mat.data = pRgb;
-		// putText fps
-		cv::putText(mat,
-		fpstr.c_str(),
-		cv::Point(mat.cols-200, 100),
-		cv::FONT_HERSHEY_PLAIN,
-		2,
-		cv::Scalar(255,125,125, 255), 2, 8, false);
+//  #ifdef USE_OPENCV
+//  		mat.data = pRgb;
+//  		// putText fps
+//  		cv::putText(mat,
+//  		fpstr.c_str(),
+//  		cv::Point(mat.cols-200, 100),
+//  		cv::FONT_HERSHEY_PLAIN,
+//  		2,
+//  		cv::Scalar(255,125,125, 255), 2, 8, false);
 
-		imshow("img", mat);
-		waitKey(1);
-#endif
+//  		imshow("img", mat);
+//  		waitKey(1);
+//  #endif
 
 		//rgb2yuv
 		if((res = sshot::YuvConvertor::ARGBToI420(pRgb, width, height, &yuvdata)) == 0)
@@ -158,6 +173,83 @@ int main(int argc, char* argv[])
 				ofsh264.flush();
 			}
 #endif
+
+#ifdef USE_DECODER
+			int decwidth = width;
+			int decheight = height;
+			int stride[2] = { 0,0 };
+			if((res = decoder->Decode(h264buf, h264Size, decbuf, stride, decwidth, decheight)) == 0){
+				std::cout << "decode ok" << std::endl;
+#ifdef DUMP_FILE_DST_YUV
+				if (ofsdecyuv.is_open() && yuvSize > 0 
+					&& decbuf[0] != NULL 
+					&& decbuf[1] != NULL 
+					&& decbuf[2] != NULL && decwidth > 0 && decheight > 0)
+				{	
+#ifdef USE_OPENCV
+					//yuv
+					cv::Mat yuvimg(decheight * 1.5, decwidth, CV_8UC1);
+					int framelen = 0;
+#endif
+					// ofsdecyuv.write((char*)decbuf[0], decheight * decwidth);
+					// ofsdecyuv.write((char*)decbuf[1], (decwidth * decheight +1)>>2);
+					// ofsdecyuv.write((char*)decbuf[2], (decwidth * decheight +1)>>2);
+						int   i;
+						unsigned char*  pPtr = NULL;
+
+						pPtr = decbuf[0];
+						for (i = 0; i < decheight; i++) {
+							ofsdecyuv.write((char*)pPtr, decwidth);
+							#ifdef USE_OPENCV
+							memcpy(yuvimg.data + framelen, pPtr, decwidth);
+							#endif
+							framelen += decwidth;
+							pPtr += stride[0];
+						}
+
+						decheight = decheight / 2;
+						decwidth = decwidth / 2;
+						pPtr = decbuf[1];
+						for (i = 0; i < decheight; i++) {
+							ofsdecyuv.write((char*)pPtr, decwidth);
+							#ifdef USE_OPENCV
+							memcpy(yuvimg.data + framelen, pPtr, decwidth);
+							framelen += decwidth;
+							#endif
+							pPtr += stride[1];
+						}
+
+						pPtr = decbuf[2];
+						for (i = 0; i < decheight; i++) {
+							ofsdecyuv.write((char*)pPtr, decwidth);
+							#ifdef USE_OPENCV
+							memcpy(yuvimg.data + framelen, pPtr, decwidth);
+							framelen += decwidth;
+							#endif
+							pPtr += stride[1];
+						}
+					ofsdecyuv.flush();
+
+#ifdef USE_OPENCV
+					cv::cvtColor(yuvimg, mat, CV_YUV420p2RGBA);
+					// putText fps
+					cv::putText(mat,
+					fpstr.c_str(),
+					cv::Point(mat.cols-200, 100),
+					cv::FONT_HERSHEY_PLAIN,
+					2,
+					cv::Scalar(255,125,125, 255), 2, 8, false);
+
+					imshow("img", mat);
+					waitKey(1);
+#endif
+				}
+#endif
+			}else {
+				std::cout << "decode failed" << res << std::endl;
+			}
+#endif
+
 		}else std::cout << "encode failed:" << res << std::endl;
 		}else{
 			std::cout << "yuv convert failed:" << res << std::endl;
@@ -171,12 +263,20 @@ if(ofsyuv.is_open())
 	ofsyuv.close();
 #endif
 
+#ifdef DUMP_FILE_DST_YUV
+if(ofsdecyuv.is_open())
+	ofsdecyuv.close();
+#endif
+
 #ifdef DUMP_FILE_H264
 if(ofsh264.is_open())
 	ofsh264.close();
 #endif
 
 	delete encoder;
+#ifdef USE_DECODER
+	delete decoder;
+#endif
 }
 
 #else

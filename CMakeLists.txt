@@ -27,7 +27,7 @@ project(screenshot VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# set(OpenCV_DIR D:/commonlib/opencv/opencv3416/opencv/build)
+set(OpenCV_DIR D:/commonlib/opencv/opencv3416/opencv/build)
 
 # yuv convert
 add_subdirectory(3rdparty/libyuv)
@@ -66,9 +66,15 @@ endif()
 
 target_link_libraries(ScreenSt PUBLIC  ${OpenCV_LIBRARIES} dxgi d3d11 shcore)
 
-target_link_libraries(ScreenSt PUBLIC welsencplus)
+target_link_libraries(ScreenSt PUBLIC welsencplus welsdecplus)
 target_link_libraries(ScreenSt PUBLIC yuv)
 
 add_custom_command(TARGET ScreenSt
                   POST_BUILD
-                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/openh264/Debug/welsencplus.dll ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/openh264/Debug/welsencplus.dll ${CMAKE_CURRENT_BINARY_DIR}/Debug
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/openh264/Debug/welsdecplus.dll ${CMAKE_CURRENT_BINARY_DIR}/Debug)
+
+add_custom_command(TARGET ScreenSt
+                  POST_BUILD
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/openh264/Release/welsencplus.dll ${CMAKE_CURRENT_BINARY_DIR}/Release
+                  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/openh264/Release/welsdecplus.dll ${CMAKE_CURRENT_BINARY_DIR}/Release)
