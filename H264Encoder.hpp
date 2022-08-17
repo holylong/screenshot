@@ -48,7 +48,22 @@ namespace sshot {
 
 		}
 
-		int Init(){
+	/**
+	 * @brief initial codec
+	 * 
+	 * @param width 
+	 * @param height 
+	 * @param in_fps 
+	 * @param out_fps 
+	 * @param type 
+	 * @return int 
+	 */
+		int Init(int width, int height,float in_fps, float out_fps, int type){
+			_width = width;
+			_height = height;
+			_in_fps = in_fps;
+			_out_fps = out_fps;
+
 			int res = WelsCreateSVCEncoder(&_encoder);
 			if(res < 0)return res;
 
@@ -56,9 +71,9 @@ namespace sshot {
 			_encoder->GetDefaultParams(&_encParam);
 			_encParam.iUsageType = CAMERA_VIDEO_REAL_TIME;
 			_encParam.bSimulcastAVC         = 0;
-			_encParam.iPicWidth = 1920;
-			_encParam.iPicHeight = 1080;
-			_encParam.fMaxFrameRate = 30.0f;
+			_encParam.iPicWidth = _width;
+			_encParam.iPicHeight = _height;
+			_encParam.fMaxFrameRate = _in_fps;
 			_encParam.iMultipleThreadIdc = 1;
 			_encParam.iTargetBitrate = 1500000000;
 			_encParam.eSpsPpsIdStrategy = INCREASING_ID;
@@ -96,7 +111,7 @@ namespace sshot {
 			// _encParam.sSpatialLayers[0].uiProfileIdc = PRO_BASELINE;
 			_encParam.sSpatialLayers[iIndexLayer].iVideoWidth = _width;
 			_encParam.sSpatialLayers[iIndexLayer].iVideoHeight = _height;
-			_encParam.sSpatialLayers[iIndexLayer].fFrameRate = 30;
+			_encParam.sSpatialLayers[iIndexLayer].fFrameRate = _out_fps;
 			_encParam.sSpatialLayers[iIndexLayer].iSpatialBitrate = 120000000;
 			_encParam.sSpatialLayers[iIndexLayer].iDLayerQp = 24;
 			_encParam.sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
@@ -137,7 +152,10 @@ namespace sshot {
 			_encParam.sSpatialLayers[iIndexLayer].sSliceArgument.uiSliceNum = 1;
 
 			_sSrcPic = new SSourcePicture;
-			_sSrcPic->iColorFormat = videoFormatI420;
+			if(type == 0)
+				_sSrcPic->iColorFormat = videoFormatI420;
+			else if(type == 1)
+				_sSrcPic->iColorFormat = videoFormatARGB;
 			_sSrcPic->uiTimeStamp = 0;
 			_sSrcPic->iPicHeight = _height;
 			_sSrcPic->iPicWidth = _width;
@@ -244,7 +262,8 @@ namespace sshot {
 
 			int _width{1920};
 			int _height{1080};
-			float _fps{40.0f};
+			float _out_fps{30.0f};
+			float _in_fps{30.0f};
 			int _gop{320};
 			int32_t _iFrameIdx{0};
 			int _bitrate{2500000};

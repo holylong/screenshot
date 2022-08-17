@@ -38,7 +38,17 @@
 namespace sshot{
   class H264Decoder : public H264Mgr{
     public:
-    		int Init(){
+  /**
+   * @brief init codec
+   * 
+   * @param width 
+   * @param height 
+   * @param in_fps 
+   * @param out_fps 
+   * @param type 
+   * @return int 
+   */
+    		int Init(int width, int height,float in_fps, float out_fps, int type){
           return 0;
         }
 #if 0

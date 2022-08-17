@@ -40,8 +40,17 @@ namespace sshot{
       H264Mgr() = default;
 
       virtual ~H264Mgr() = default;
-
-      virtual int Init() = 0;
+      /**
+       * @brief init codec
+       * 
+       * @param width 
+       * @param height 
+       * @param in_fps 
+       * @param out_fps 
+       * @param type 
+       * @return int 
+       */
+      virtual int Init(int width, int height,float in_fps, float out_fps, int type) = 0;
       virtual int Decode(unsigned char* h264buf, unsigned int h264len) = 0;
 #if 0
       virtual int Encode(yuv420frame yuv, int nLen) = 0;

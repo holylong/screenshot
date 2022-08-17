@@ -43,21 +43,28 @@
 #include <chrono> // time duration
 #include <YuvConvertor.hpp>
 
+// #undef USE_OPENCV
+
 #ifdef USE_OPENCV
 #include <opencv2/opencv.hpp>
 using namespace cv;
 #endif
 
-using namespace std;
-
 #define DUMP_FILE_H264
 // #define DUMP_FILE_YUV
-#undef USE_OPENCV
 
 #if 1
 
-int main()
+void printHelp(char* argv[]){
+	std::cout << "you can input arguments output file like:" << argv[0] << " output.264" << std::endl;
+}
+
+int main(int argc, char* argv[])
 {
+	if(argc < 2)
+	{
+		printHelp(argv);
+	}
 	int res = 0;
 
 	//init dxgi
@@ -75,11 +82,6 @@ int main()
 	namedWindow("img", 0);
 #endif
 
-	//init h264mgr
-	auto encoder = sshot::createH264Mgr();
-	encoder->Init();
-
-
 	float fps = 0.0f;
 	short count = 0;
 	int width = rect.right - rect.left;
@@ -90,15 +92,22 @@ int main()
 	int yuvSize = width*height*3/2;
 	yuvdata = (uint8_t*)malloc(yuvSize);
 	int h264Size = 0;
-	uint8_t* h264buf = (uint8_t*)malloc(1024*1024);; 
+	uint8_t* h264buf = (uint8_t*)malloc(1024*1024);
+
+		//init h264mgr
+	auto encoder = sshot::createH264Mgr();
+	encoder->Init(width, height, 15, 15, 0);
+
 #ifdef DUMP_FILE_YUV
-	ofstream ofsyuv;
-	ofsyuv.open("p.yuv", ios::binary);
+	std::ofstream ofsyuv;
+	ofsyuv.open("p.yuv", std::ios::binary);
 #endif
 
 #ifdef DUMP_FILE_H264
-	ofstream ofsh264;
-	ofsh264.open("p.264", ios::binary);
+	std::ofstream ofsh264;
+	if(argc == 2)
+		ofsh264.open(argv[1], std::ios::binary);
+		else ofsh264.open("output.264", std::ios::binary);
 #endif
 
 	while (count < 150)
@@ -139,11 +148,7 @@ int main()
 			ofsyuv.flush();
 		}
 #endif
-
-		//yuv2h264
-		uint8_t* bakyuv = (uint8_t*)malloc(yuvSize);
-		memcpy(bakyuv, yuvdata, yuvSize);
-		if((res = encoder->Encode(bakyuv, h264buf, &h264Size)) == 0)
+		if((res = encoder->Encode(yuvdata, h264buf, &h264Size)) == 0)
 		{
 			std::cout << "encoder ok: " << h264Size << " bytes" << std::endl;
 #ifdef DUMP_FILE_H264
@@ -154,7 +159,6 @@ int main()
 			}
 #endif
 		}else std::cout << "encode failed:" << res << std::endl;
-		free(bakyuv);
 		}else{
 			std::cout << "yuv convert failed:" << res << std::endl;
 		}

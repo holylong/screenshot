@@ -27,7 +27,7 @@ project(screenshot VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(OpenCV_DIR D:/commonlib/opencv/opencv3416/opencv/build)
+# set(OpenCV_DIR D:/commonlib/opencv/opencv3416/opencv/build)
 
 # yuv convert
 add_subdirectory(3rdparty/libyuv)
