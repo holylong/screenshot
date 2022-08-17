@@ -1,0 +1,6 @@
+.vscode 
+build_ninja 
+testbin/enc_console.exe 
+testbin/p.yuv 
+testbin/test.264
+testbin/welsencplus.dll 

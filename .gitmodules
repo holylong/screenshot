@@ -1,0 +1,6 @@
+[submodule "3rdparty/openh264"]
+	path = 3rdparty/openh264
+	url = git@github.com:holylong/openh264
+[submodule "3rdparty/libyuv"]
+	path = 3rdparty/libyuv
+	url = git@github.com:holylong/libyuv
