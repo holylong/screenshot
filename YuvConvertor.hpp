@@ -52,6 +52,23 @@ namespace sshot{
             *yuvptr + dst_width * dst_height + half_width * half_height,
             half_width, dst_width, dst_height);
       }
+
+      static int I420ToARGB(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height)
+      {
+        return libyuv::I420ToARGB(
+            src_y, src_stride_y, src_u, src_stride_u,
+            src_v, src_stride_v, dst_abgr,
+            dst_stride_abgr, width, height);
+      }
   };
 }
 
